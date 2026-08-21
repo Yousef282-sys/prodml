@@ -31,7 +31,7 @@ jobs:
           pip install ".[dev]"
 
       - name: Run tests
-        run: pytest
+        run: python -m pytest
 
       - name: Log in to GHCR
         if: github.event_name == 'push'
