@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
@@ -12,6 +13,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 
 DATA_PATH = Path("data/train.csv")
+MODEL_PATH = Path("models/taxi_model.joblib")
 
 
 def haversine_distance(
@@ -37,12 +39,8 @@ def haversine_distance(
     return 2 * earth_radius_km * np.arcsin(np.sqrt(a))
 
 
-def main() -> None:
-    print("Loading dataset...")
-
-    df = pd.read_csv(DATA_PATH)
-
-    print(f"Original shape: {df.shape}")
+def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
 
     df["pickup_datetime"] = pd.to_datetime(df["pickup_datetime"])
 
@@ -57,6 +55,15 @@ def main() -> None:
         df["dropoff_latitude"],
         df["dropoff_longitude"],
     )
+
+    return df
+
+
+def main() -> None:
+    print("Loading dataset...")
+
+    df = pd.read_csv(DATA_PATH)
+    df = prepare_features(df)
 
     target = "trip_duration"
 
@@ -130,8 +137,7 @@ def main() -> None:
         random_state=42,
     )
 
-    print("Training improved model...")
-
+    print("Training model...")
     model.fit(X_train, y_train)
 
     predictions = model.predict(X_test)
@@ -139,9 +145,12 @@ def main() -> None:
     mae = mean_absolute_error(y_test, predictions)
     rmse = root_mean_squared_error(y_test, predictions)
 
-    print("\nImproved Model Results")
-    print(f"MAE:  {mae:.4f}")
+    print(f"\nMAE:  {mae:.4f}")
     print(f"RMSE: {rmse:.4f}")
+
+    joblib.dump(model, MODEL_PATH)
+
+    print(f"\nModel saved to: {MODEL_PATH}")
 
 
 if __name__ == "__main__":
