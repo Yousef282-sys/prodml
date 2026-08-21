@@ -1,0 +1,38 @@
+[project]
+name = "prodml"
+version = "0.1.0"
+description = "Production-ready ML service for taxi trip duration prediction"
+requires-python = ">=3.10"
+dependencies = [
+    "scikit-learn",
+    "pandas",
+    "pyarrow",
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "pydantic-settings",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "black",
+    "mypy",
+    "httpx",
+    "pre-commit",
+]
+
+[project.scripts]
+prodml-train = "prodml.train:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=src/prodml --cov-fail-under=70"
