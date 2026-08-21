@@ -1,9 +1,31 @@
 from pathlib import Path
+import json
+import logging
 
 import joblib
 import pandas as pd
 from fastapi import FastAPI
 from pydantic import BaseModel
+
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        log = {
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "logger": record.name,
+        }
+        return json.dumps(log)
+
+
+logger = logging.getLogger("prodml")
+handler = logging.StreamHandler()
+handler.setFormatter(JsonFormatter())
+
+if not logger.handlers:
+    logger.addHandler(handler)
+
+logger.setLevel(logging.INFO)
 
 
 app = FastAPI(
@@ -13,7 +35,9 @@ app = FastAPI(
 
 MODEL_PATH = Path("models/taxi_model.joblib")
 
+logger.info("Loading model")
 model = joblib.load(MODEL_PATH)
+logger.info("Model loaded successfully")
 
 
 class TripRequest(BaseModel):
@@ -37,15 +61,18 @@ class PredictionResponse(BaseModel):
 
 @app.get("/health")
 def health() -> dict[str, str]:
+    logger.info("Health check requested")
     return {"status": "ok"}
 
 
 @app.post("/predict", response_model=PredictionResponse)
 def predict(request: TripRequest) -> PredictionResponse:
+    logger.info("Prediction request received")
+
     data = pd.DataFrame([request.model_dump()])
-
     prediction = model.predict(data)[0]
+    result = float(prediction)
 
-    return PredictionResponse(
-        trip_duration=float(prediction)
-    )
+    logger.info("Prediction completed")
+
+    return PredictionResponse(trip_duration=result)
